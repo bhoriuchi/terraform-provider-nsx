@@ -1,0 +1,2 @@
+go build -o terraform-provider-nsx
+sudo chmod +x terraform-provider-nsx
