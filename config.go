@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"gopkg.in/resty.v0"
 	"crypto/tls"
 )
@@ -21,9 +20,5 @@ func (c *Config) Client() (interface{}, error) {
 	resty.SetHeader("Accept", "application/xml")
 
 	client := resty.R()
-
-	resp, err := client.Get(c.NSXManager + "/2.0/services/securitytags/tag/securitytag-9")
-	log.Printf("!!! %+v", resp)
-
-	return &client, err
+	return &client, nil
 }

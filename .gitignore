@@ -6,9 +6,11 @@
 
 # Icon must end with two \r
 Icon
-
-terraform-provider-nsx
-terraform
+sandbox/terraform.tfvars
+sandbox/terraform-provider-nsx
+sandbox/terraform
+sandbox/terraform.tfstate
+sandbox/crash.log
 # Thumbnails
 ._*
 
