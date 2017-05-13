@@ -10,6 +10,10 @@ provider "nsx" {
   allow_unverified_ssl = "${var.allow_unverified_ssl}"
 }
 
-resource "nsx_tag" "my-tag" {
-  id = "stuff"
+resource "nsx_tag" "tag1" {
+  tag_id = "securitytag-9"
+}
+
+resource "nsx_tag" "tag2" {
+  tag_id = "securitytag-3"
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/hashicorp/terraform/helper/schema"
+	"gopkg.in/resty.v0"
 )
 
 func Provider() *schema.Provider {
@@ -44,7 +45,13 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		Password: d.Get("password").(string),
 		NSXManager: "https://" + d.Get("nsx_manager").(string) + "/api",
 		InsecureFlag: d.Get("allow_unverified_ssl").(bool),
+		RequestedTagList: false,
+		TagsList: NSXTagList{},
 	}
 
 	return config.Client()
+}
+
+func getRequest (c *Config, route string) (*resty.Response, error) {
+	return resty.R().Get(c.NSXManager + route)
 }

@@ -10,6 +10,8 @@ sandbox/terraform.tfvars
 sandbox/terraform-provider-nsx
 sandbox/terraform
 sandbox/terraform.tfstate
+sandbox/terraform.tfplan
+sandbox/terraform.tfstate.backup
 sandbox/crash.log
 # Thumbnails
 ._*
