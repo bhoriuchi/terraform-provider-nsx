@@ -11,9 +11,6 @@ provider "nsx" {
 }
 
 resource "nsx_tag" "tag1" {
-  tag_id = "securitytag-9"
-}
-
-resource "nsx_tag" "tag2" {
-  tag_id = "securitytag-3"
+  tag_name = "Terraform.TEST1"
+  description = "Testing terraform create security tag"
 }
