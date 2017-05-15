@@ -1,9 +1,10 @@
 package main
 
 import (
-	"gopkg.in/resty.v0"
-	"crypto/tls"
 	"time"
+	"crypto/tls"
+
+	"gopkg.in/resty.v0"
 )
 
 type Semver struct {

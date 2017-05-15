@@ -12,7 +12,8 @@ provider "nsx" {
 }
 
 resource "nsx_tag" "tag1" {
-  tag_name = "Terraform.TEST1"
-  description = "Testing terraform create security tag"
+  tag_name = "Terraform.Test1"
+  description = "Test"
   create_if_missing = true
+  persistent = false
 }

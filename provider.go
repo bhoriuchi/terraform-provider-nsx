@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/hashicorp/terraform/helper/schema"
-	"gopkg.in/resty.v0"
-	"net/http"
-	"encoding/xml"
+	"fmt"
 	"errors"
 	"strings"
 	"strconv"
-	"fmt"
+	"net/http"
+	"encoding/xml"
+
+	"github.com/hashicorp/terraform/helper/schema"
+	"gopkg.in/resty.v0"
 )
 
 func Provider() *schema.Provider {
@@ -65,7 +66,10 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		User: d.Get("user").(string),
 		Password: d.Get("password").(string),
 		NSXManager: manager,
-		NSXVersion: Semver{Major: major, Minor: minor},
+		NSXVersion: Semver{
+			Major: major,
+			Minor: minor,
+		},
 		TagEndpoint: manager + "/2.0/services/securitytags/tag",
 		InsecureFlag: d.Get("allow_unverified_ssl").(bool),
 	}

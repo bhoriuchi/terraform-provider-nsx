@@ -1,13 +1,14 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"errors"
+	"net/http"
+	"encoding/xml"
+
 	"github.com/hashicorp/terraform/helper/schema"
 	"gopkg.in/resty.v0"
-	"log"
-	"encoding/xml"
-	"net/http"
-	"fmt"
-	"errors"
 )
 
 type NSXTagType struct {
@@ -15,33 +16,17 @@ type NSXTagType struct {
 }
 
 type NSXTag struct {
+	XMLName xml.Name `xml:"securityTag"`
 	ObjectId string `xml:"objectId"`
 	ObjectTypeName string `xml:"objectTypeName"`
 	Type NSXTagType `xml:"type"`
 	Name string `xml:"name"`
 	Description string `xml:"description"`
+	IsUniversal bool `xml:"isUniversal"`
 }
 
 type NSXTagList struct {
 	SecurityTags []NSXTag `xml:"securityTag"`
-}
-
-// support multiple api versions
-type NSXTagPost_6_2 struct {
-	XMLName xml.Name `xml:"securityTag"`
-	ObjectTypeName string `xml:"objectTypeName"`
-	Type NSXTagType `xml:"type"`
-	Name string `xml:"name"`
-	Description string `xml:"description"`
-}
-
-type NSXTagPost_6_3 struct {
-	XMLName xml.Name `xml:"securityTag"`
-	ObjectTypeName string `xml:"objectTypeName"`
-	Type NSXTagType `xml:"type"`
-	Name string `xml:"name"`
-	Description string `xml:"description"`
-	IsUniversal bool `xml:"isUniversal"`
 }
 
 func resourceNSXTag() *schema.Resource {
@@ -101,7 +86,7 @@ func resourceNSXTagCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 
 		d.Set("tag_description", tag.Description)
-		setNSXTagId(d, tag.ObjectId)
+		setNSXTag(d, &tag)
 
 	} else if v, ok := d.GetOk("tag_name"); ok {
 		tagName := v.(string)
@@ -109,7 +94,7 @@ func resourceNSXTagCreate(d *schema.ResourceData, meta interface{}) error {
 
 		if foundErr == nil {
 			d.Set("tag_description", foundTag.Description)
-			setNSXTagId(d, foundTag.ObjectId)
+			setNSXTag(d, &foundTag)
 		} else {
 			if d.Get("create_if_missing").(bool) == true {
 				newTag, createErr := createNSXTag(d, meta)
@@ -117,7 +102,7 @@ func resourceNSXTagCreate(d *schema.ResourceData, meta interface{}) error {
 					return createErr
 				}
 				d.Set("tag_description", newTag.Description)
-				setNSXTagId(d, newTag.ObjectId)
+				setNSXTag(d, &newTag)
 
 			} else {
 				return fmt.Errorf("Security Tag %q not found and %q is set to false", tagName, "create_if_missing")
@@ -130,9 +115,12 @@ func resourceNSXTagCreate(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func setNSXTagId (d *schema.ResourceData, tagId string) {
-	d.SetId(tagId)
-	d.Set("tag_id", tagId)
+func setNSXTag (d *schema.ResourceData, tag *NSXTag) {
+	d.SetId(tag.ObjectId)
+	d.Set("tag_id", tag.ObjectId)
+	d.Set("description", tag.Description)
+	d.Set("tag_name", tag.Name)
+	d.Set("is_universal", tag.IsUniversal)
 }
 
 func getNSXTagByName (config *Config, tagName string) (NSXTag, error) {
@@ -173,34 +161,18 @@ func getNSXTagById (config *Config, tagId string) (NSXTag, error) {
 
 func createNSXTag(d *schema.ResourceData, meta interface{}) (NSXTag, error) {
 	config := meta.(*Config)
-	var body interface{}
-
-	// use the correct post body
-	if config.NSXVersion.Major == 6 && config.NSXVersion.Minor == 2 {
-		body = NSXTagPost_6_2{
-			ObjectTypeName: "SecurityTag",
-			Type: NSXTagType{ TypeName: "SecurityTag" },
-			Name: d.Get("tag_name").(string),
-			Description: d.Get("description").(string),
-		}
-	} else {
-		body = NSXTagPost_6_3{
-			ObjectTypeName: "SecurityTag",
-			Type: NSXTagType{ TypeName: "SecurityTag" },
-			Name: d.Get("tag_name").(string),
-			IsUniversal: d.Get("is_universal").(bool),
-			Description: d.Get("description").(string),
-		}
-	}
 
 	newTag := NSXTag{
 		ObjectTypeName: "SecurityTag",
 		Type: NSXTagType{ TypeName: "SecurityTag" },
 		Name: d.Get("tag_name").(string),
+		IsUniversal: d.Get("is_universal").(bool),
 		Description: d.Get("description").(string),
 	}
 
-	resp, err := resty.R().SetBody(body).Post(config.TagEndpoint)
+	resp, err := resty.R().
+		SetBody(newTag).
+		Post(config.TagEndpoint)
 
 	if err != nil {
 		return newTag, err
@@ -218,33 +190,66 @@ func createNSXTag(d *schema.ResourceData, meta interface{}) (NSXTag, error) {
 func resourceNSXTagRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 
-	if v, ok := d.GetOk("tag_id"); ok {
-		tagId := v.(string)
-		_, err := getNSXTagById(config, tagId)
+	tag, err := getNSXTagById(config, d.Id())
 
-		if err != nil {
-			d.SetId("")
-			return err
-		}
-	} else if v, ok := d.GetOk("tag_name"); ok {
-		tagName := v.(string)
-		_, err := getNSXTagByName(config, tagName)
-		if err != nil {
-			d.SetId("")
-			return err
-		}
-	} else {
-		return fmt.Errorf("no %q or %q specified", "tag_id", "tag_name")
+	if err != nil {
+		d.SetId("")
+		return err
 	}
+
+	setNSXTag(d, &tag)
 
 	return nil
 }
 
 func resourceNSXTagUpdate(d *schema.ResourceData, meta interface{}) error {
+	config := meta.(*Config)
+
+	if d.HasChange("tag_name") || d.HasChange("description") {
+		tag := NSXTag{
+			ObjectId: d.Id(),
+			ObjectTypeName: "SecurityTag",
+			Type: NSXTagType{ TypeName: "SecurityTag" },
+			Name: d.Get("tag_name").(string),
+			IsUniversal: d.Get("is_universal").(bool),
+			Description: d.Get("description").(string),
+		}
+
+		resp, err := resty.R().
+			SetBody(tag).
+			Put(fmt.Sprintf("%s/%s", config.TagEndpoint, d.Id()))
+
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode() != http.StatusOK {
+			return fmt.Errorf("%s", resp.String())
+		}
+	}
+
+	d.Set("tag_id", d.Id())
+
 	return nil
 }
 
 func resourceNSXTagDelete(d *schema.ResourceData, meta interface{}) error {
-	log.Printf("%s", "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IN DELETE")
+	config := meta.(*Config)
+
+	if d.Get("persistent").(bool) != true {
+		resp, err := resty.R().
+			Delete(fmt.Sprintf("%s/%s", config.TagEndpoint, d.Id()))
+
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode() == http.StatusNotFound {
+			log.Printf("[NSXLOG] could not find security tag %q during destroy operation, considering it destroyed", d.Id())
+		}
+	} else {
+		log.Printf("[NSXLOG] %q is persistent and will NOT be destroyed", d.Id())
+	}
+
 	return nil
 }
