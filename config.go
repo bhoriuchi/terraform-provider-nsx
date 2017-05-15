@@ -6,11 +6,19 @@ import (
 	"time"
 )
 
+type Semver struct {
+	Major int
+	Minor int
+	Patch int
+}
+
 type Config struct {
 	User string
 	Password string
 	NSXManager string
+	TagEndpoint string
 	InsecureFlag bool
+	NSXVersion Semver
 }
 
 func (c *Config) Client() (*Config, error) {

@@ -3,6 +3,11 @@ package main
 import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"gopkg.in/resty.v0"
+	"encoding/xml"
+	"errors"
+	"strings"
+	"strconv"
+	"fmt"
 )
 
 func Provider() *schema.Provider {
@@ -25,6 +30,11 @@ func Provider() *schema.Provider {
 				Required: true,
 				DefaultFunc: schema.EnvDefaultFunc("NSX_MANAGER", nil),
 			},
+			"nsx_version": &schema.Schema{
+				Type: schema.TypeString,
+				Optional: true,
+				DefaultFunc: schema.EnvDefaultFunc("NSX_VERSION", "6.3"),
+			},
 			"allow_unverified_ssl": &schema.Schema{
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -40,16 +50,42 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+	manager := "https://" + d.Get("nsx_manager").(string) + "/api"
+	verString := d.Get("nsx_version").(string)
+	ver := strings.Split(verString, ".")
+	major, magErr := strconv.Atoi(ver[0])
+	minor, minErr := strconv.Atoi(ver[1])
+
+	if magErr != nil || minErr != nil || major < 6 || (major == 6 && minor < 2) {
+		return nil, fmt.Errorf("Unsupported NSX version %s. NSX 6.2 and higher is required", verString)
+	}
+
 	config := Config{
 		User: d.Get("user").(string),
 		Password: d.Get("password").(string),
-		NSXManager: "https://" + d.Get("nsx_manager").(string) + "/api",
+		NSXManager: manager,
+		NSXVersion: Semver{Major: major, Minor: minor},
+		TagEndpoint: manager + "/2.0/services/securitytags/tag",
 		InsecureFlag: d.Get("allow_unverified_ssl").(bool),
 	}
 
 	return config.Client()
 }
 
-func getRequest (c *Config, route string) (*resty.Response, error) {
-	return resty.R().Get(c.NSXManager + route)
+func getRequest (route string, obj interface{}) error {
+	resp, reqErr := resty.R().Get(route)
+	if reqErr != nil {
+		return reqErr
+	}
+
+	if resp.StatusCode() >= 400 {
+		return errors.New(resp.String())
+	}
+
+	parseErr := xml.Unmarshal(resp.Body(), &obj)
+	if parseErr != nil {
+		return parseErr
+	}
+
+	return nil
 }
