@@ -6,7 +6,6 @@ import (
 	"strings"
 	"strconv"
 	"net/http"
-	"encoding/xml"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"gopkg.in/resty.v0"
@@ -46,6 +45,7 @@ func Provider() *schema.Provider {
 		},
 		ResourcesMap: map[string]*schema.Resource{
 			"nsx_tag": resourceNSXTag(),
+			"nsx_vm": resourceNSXVm(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
@@ -74,22 +74,19 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		InsecureFlag: d.Get("allow_unverified_ssl").(bool),
 	}
 
-	return config.Client()
+	return config.ClientInit()
 }
 
 func getRequest (route string, obj interface{}) error {
-	resp, reqErr := resty.R().Get(route)
+	resp, reqErr := resty.R().
+		SetResult(&obj).
+		Get(route)
 	if reqErr != nil {
 		return reqErr
 	}
 
 	if resp.StatusCode() != http.StatusOK {
 		return errors.New(resp.String())
-	}
-
-	parseErr := xml.Unmarshal(resp.Body(), &obj)
-	if parseErr != nil {
-		return parseErr
 	}
 
 	return nil

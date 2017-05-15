@@ -22,7 +22,7 @@ type Config struct {
 	NSXVersion Semver
 }
 
-func (c *Config) Client() (*Config, error) {
+func (c *Config) ClientInit() (*Config, error) {
 	if c.InsecureFlag == true {
 		resty.SetTLSClientConfig(&tls.Config{ InsecureSkipVerify: true })
 	}
