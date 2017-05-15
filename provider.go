@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"gopkg.in/resty.v0"
+	"net/http"
 	"encoding/xml"
 	"errors"
 	"strings"
@@ -78,7 +79,7 @@ func getRequest (route string, obj interface{}) error {
 		return reqErr
 	}
 
-	if resp.StatusCode() >= 400 {
+	if resp.StatusCode() != http.StatusOK {
 		return errors.New(resp.String())
 	}
 

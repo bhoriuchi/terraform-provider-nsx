@@ -5,6 +5,7 @@ import (
 	"gopkg.in/resty.v0"
 	"log"
 	"encoding/xml"
+	"net/http"
 	"fmt"
 	"errors"
 )
@@ -54,36 +55,45 @@ func resourceNSXTag() *schema.Resource {
 			"tag_id": &schema.Schema{
 				Type: schema.TypeString,
 				Optional: true,
+				Description: "Security tag id (i.e. \"securitytag-1\").",
 			},
 			"tag_name": &schema.Schema{
 				Type: schema.TypeString,
 				Optional: true,
+				Description: "Case sensetive security tag name to search for.",
 			},
 			"description": &schema.Schema{
 				Type: schema.TypeString,
 				Optional: true,
+				Description: "Security tag description.",
 			},
 			"create_if_missing": &schema.Schema{
 				Type: schema.TypeBool,
 				Optional: true,
 				Default: false,
+				Description: "Creates the security tag if it is not found during create.",
 			},
 			"is_universal": &schema.Schema{
 				Type: schema.TypeBool,
 				Optional: true,
 				Default: false,
+				Description: "Creates the security tag as a universal tag (NSX 6.3 and higher).",
+			},
+			"persistent": &schema.Schema{
+				Type: schema.TypeBool,
+				Optional: true,
+				Default: true,
+				Description: "When true, prevents removal of the security tag during a destroy operation.",
 			},
 		},
 	}
 }
 
 func resourceNSXTagCreate(d *schema.ResourceData, meta interface{}) error {
-	tagId := d.Get("tag_id").(string)
-	tagName := d.Get("tag_name").(string)
-	createMissing := d.Get("create_if_missing").(bool)
 	config := meta.(*Config)
 
-	if tagId != "" {
+	if v, ok := d.GetOk("tag_id"); ok {
+		tagId := v.(string)
 		tag, err := getNSXTagById(config, tagId)
 
 		if err != nil {
@@ -93,14 +103,15 @@ func resourceNSXTagCreate(d *schema.ResourceData, meta interface{}) error {
 		d.Set("tag_description", tag.Description)
 		setNSXTagId(d, tag.ObjectId)
 
-	} else if tagName != "" {
+	} else if v, ok := d.GetOk("tag_name"); ok {
+		tagName := v.(string)
 		foundTag, foundErr := getNSXTagByName(config, tagName)
 
 		if foundErr == nil {
 			d.Set("tag_description", foundTag.Description)
 			setNSXTagId(d, foundTag.ObjectId)
 		} else {
-			if createMissing == true {
+			if d.Get("create_if_missing").(bool) == true {
 				newTag, createErr := createNSXTag(d, meta)
 				if createErr != nil {
 					return createErr
@@ -195,7 +206,7 @@ func createNSXTag(d *schema.ResourceData, meta interface{}) (NSXTag, error) {
 		return newTag, err
 	}
 
-	if resp.StatusCode() != 201 {
+	if resp.StatusCode() != http.StatusCreated {
 		log.Printf("%+v", resp)
 		return newTag, errors.New(resp.String())
 	}
@@ -205,13 +216,26 @@ func createNSXTag(d *schema.ResourceData, meta interface{}) (NSXTag, error) {
 }
 
 func resourceNSXTagRead(d *schema.ResourceData, meta interface{}) error {
-	// resp, err := client.Get(c.NSXManager + "/2.0/services/securitytags/tag/securitytag-9")
+	config := meta.(*Config)
 
-	// if err != nil {
-	//	return err
-	// }
-	log.Printf("%s", "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! IN READ")
-	log.Printf("!!! %+v", meta)
+	if v, ok := d.GetOk("tag_id"); ok {
+		tagId := v.(string)
+		_, err := getNSXTagById(config, tagId)
+
+		if err != nil {
+			d.SetId("")
+			return err
+		}
+	} else if v, ok := d.GetOk("tag_name"); ok {
+		tagName := v.(string)
+		_, err := getNSXTagByName(config, tagName)
+		if err != nil {
+			d.SetId("")
+			return err
+		}
+	} else {
+		return fmt.Errorf("no %q or %q specified", "tag_id", "tag_name")
+	}
 
 	return nil
 }
