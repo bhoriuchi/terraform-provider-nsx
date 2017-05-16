@@ -18,9 +18,17 @@ resource "nsx_tag" "tag1" {
   persistent = false
 }
 
+resource "nsx_tag" "tag2" {
+  tag_name = "Terraform.Test2"
+  description = "Test"
+  create_if_missing = true
+  persistent = false
+}
+
 resource "nsx_vm" "puppet01" {
   vm_id = "${var.vm_id}"
   security_tags = [
-    "${nsx_tag.tag1.id}"
+    "${nsx_tag.tag1.id}",
+    "Terraform.Test2"
   ]
 }

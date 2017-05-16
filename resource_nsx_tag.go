@@ -22,7 +22,7 @@ type NSXTag struct {
 	Type NSXTagType `xml:"type"`
 	Name string `xml:"name"`
 	Description string `xml:"description"`
-	IsUniversal bool `xml:"isUniversal"`
+	IsUniversal bool `xml:"isUniversal,omitempty"`
 }
 
 type NSXTagList struct {
@@ -61,7 +61,6 @@ func resourceNSXTag() *schema.Resource {
 			"is_universal": &schema.Schema{
 				Type: schema.TypeBool,
 				Optional: true,
-				Default: false,
 				Description: "Creates the security tag as a universal tag (NSX 6.3 and higher).",
 			},
 			"persistent": &schema.Schema{
@@ -124,33 +123,27 @@ func setNSXTag (d *schema.ResourceData, tag *NSXTag) {
 }
 
 func getNSXTagByName (config *Config, tagName string) (NSXTag, error) {
-	found := false
 	tagList := NSXTagList{}
 	tagValue := NSXTag{}
-	getErr := getRequest(config.TagEndpoint, &tagList)
+	getErr := getRequest(fmt.Sprintf("%s/tag", config.TagEndpoint), &tagList)
 
 	if getErr != nil {
 		return tagValue, getErr
 	}
 
-	for i := range tagList.SecurityTags {
-		if tagList.SecurityTags[i].Name == tagName {
-			found = true
-			tagValue = tagList.SecurityTags[i]
-			break
+	for _, tag := range tagList.SecurityTags {
+		if tag.Name == tagName {
+			return tag, nil
+
 		}
 	}
 
-	if found == false {
-		return tagValue, errors.New("tag not found")
-	}
-
-	return tagValue, nil
+	return tagValue, errors.New("tag not found")
 }
 
 func getNSXTagById (config *Config, tagId string) (NSXTag, error) {
 	tagValue := NSXTag{}
-	getErr := getRequest(fmt.Sprintf("%s/%s", config.TagEndpoint, tagId), &tagValue)
+	getErr := getRequest(fmt.Sprintf("%s/tag/%s", config.TagEndpoint, tagId), &tagValue)
 
 	if getErr != nil {
 		return tagValue, getErr
@@ -172,7 +165,7 @@ func createNSXTag(d *schema.ResourceData, meta interface{}) (NSXTag, error) {
 
 	resp, err := resty.R().
 		SetBody(newTag).
-		Post(config.TagEndpoint)
+		Post(fmt.Sprintf("%s/tag", config.TagEndpoint))
 
 	if err != nil {
 		return newTag, err
@@ -217,7 +210,7 @@ func resourceNSXTagUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		resp, err := resty.R().
 			SetBody(tag).
-			Put(fmt.Sprintf("%s/%s", config.TagEndpoint, d.Id()))
+			Put(fmt.Sprintf("%s/tag/%s", config.TagEndpoint, d.Id()))
 
 		if err != nil {
 			return err
@@ -238,7 +231,7 @@ func resourceNSXTagDelete(d *schema.ResourceData, meta interface{}) error {
 
 	if d.Get("persistent").(bool) != true {
 		resp, err := resty.R().
-			Delete(fmt.Sprintf("%s/%s", config.TagEndpoint, d.Id()))
+			Delete(fmt.Sprintf("%s/tag/%s", config.TagEndpoint, d.Id()))
 
 		if err != nil {
 			return err

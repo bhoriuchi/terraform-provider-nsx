@@ -70,7 +70,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 			Major: major,
 			Minor: minor,
 		},
-		TagEndpoint: manager + "/2.0/services/securitytags/tag",
+		TagEndpoint: manager + "/2.0/services/securitytags",
 		InsecureFlag: d.Get("allow_unverified_ssl").(bool),
 	}
 
