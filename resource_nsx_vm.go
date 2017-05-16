@@ -8,6 +8,7 @@ import (
 
 	"gopkg.in/resty.v0"
 	"github.com/hashicorp/terraform/helper/schema"
+	"log"
 )
 
 func resourceNSXVm() *schema.Resource {
@@ -175,10 +176,10 @@ func mapTfIds (tagList []NSXTag, list interface{}) []string {
 	mapped := []string{}
 
 	for _, item := range list.([]interface{}) {
-		if tagId, err := lookupTagId(tagList, item.(string)); err != nil {
-			return err
-		} else {
+		if tagId, err := lookupTagId(tagList, item.(string)); err == nil {
 			mapped = append(mapped, tagId)
+		} else {
+			log.Printf("[NSXLOG] failed to lookup %q", item)
 		}
 	}
 	return mapped
