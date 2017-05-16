@@ -15,14 +15,12 @@ resource "nsx_tag" "tag1" {
   tag_name = "Terraform.Test1"
   description = "Test"
   create_if_missing = true
-  persistent = false
 }
 
 resource "nsx_tag" "tag2" {
   tag_name = "Terraform.Test2"
   description = "Test"
   create_if_missing = true
-  persistent = false
 }
 
 resource "nsx_vm" "puppet01" {
