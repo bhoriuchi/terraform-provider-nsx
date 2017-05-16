@@ -6,7 +6,7 @@ The VMware NSX provider is used to interact with the resources supported by VMwa
 Note: This provider is experimental and not full-featured
 ```
 
-### Example Usage
+**Example Usage**
 
 ---
 
@@ -43,7 +43,7 @@ resource "nsx_vm" "web01" {
 }
 ```
 
-### Argument Reference
+**Argument Reference**
 
 ---
 
@@ -57,14 +57,14 @@ The following arguments are used to configure the VMware NSX Provider:
 
 # Resources
 
-* [nsx_tag]()
-* [nsx_vm]()
+* [nsx_tag](#nsx_tag)
+* [nsx_vm](#nsx_vm)
 
 ### nsx_tag
 
 Provides an NSX security tag resource. This can be used to create, modify, delete, and lookup security tags.
 
-### Example Usage
+**Example Usage**
 
 ---
 
@@ -76,7 +76,7 @@ resource "nsx_tag" "tag1" {
 }
 ```
 
-### Argument Reference
+**Argument Reference**
 
 ---
 
@@ -93,7 +93,7 @@ The following arguments are supported:
 
 Provides an NSX virtual machine resource. This can be used to attach and detach security tags
 
-### Example Usage
+**Example Usage**
 
 ---
 
@@ -107,7 +107,7 @@ resource "nsx_vm" "web01" {
 }
 ```
 
-### Argument Reference
+**Argument Reference**
 
 ---
 
