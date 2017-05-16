@@ -176,7 +176,7 @@ func mapTfIds (tagList []NSXTag, list interface{}) []string {
 
 	for _, item := range list.([]interface{}) {
 		if tagId, err := lookupTagId(tagList, item.(string)); err != nil {
-
+			return err
 		} else {
 			mapped = append(mapped, tagId)
 		}
