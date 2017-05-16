@@ -1,6 +1,8 @@
 package main
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+)
 
 type NSXTagType struct {
 	TypeName string `xml:"typeName"`
@@ -14,6 +16,7 @@ type NSXTag struct {
 	Name 		string 		`xml:"name,omitempty"`
 	Description 	string 		`xml:"description,omitempty"`
 	IsUniversal 	bool 		`xml:"isUniversal,omitempty"`
+	VmCount		int		`xml:"vmCount,omitempty"`
 }
 
 type NSXTagList struct {

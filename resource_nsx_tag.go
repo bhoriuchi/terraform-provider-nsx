@@ -36,7 +36,7 @@ func resourceNSXTag() *schema.Resource {
 			"create_if_missing": &schema.Schema{
 				Type: schema.TypeBool,
 				Optional: true,
-				Default: false,
+				Default: true,
 				Description: "Creates the security tag if it is not found during create.",
 			},
 			"is_universal": &schema.Schema{
@@ -47,8 +47,14 @@ func resourceNSXTag() *schema.Resource {
 			"persistent": &schema.Schema{
 				Type: schema.TypeBool,
 				Optional: true,
-				Default: true,
+				Default: false,
 				Description: "When true, prevents removal of the security tag during a destroy operation.",
+			},
+			"safe_destroy": &schema.Schema{
+				Type: schema.TypeBool,
+				Optional: true,
+				Default: true,
+				Description: "When true, prevents removal of the security tag if one or more virtual machines are attached to it.",
 			},
 		},
 	}
@@ -129,8 +135,18 @@ func resourceNSXTagUpdate(d *schema.ResourceData, meta interface{}) error {
 func resourceNSXTagDelete(d *schema.ResourceData, meta interface{}) error {
 	config 		:= meta.(*Config)
 	endpoint 	:= fmt.Sprintf("%s/tag/%s", config.TagEndpoint, d.Id())
+	tag 		:= NSXTag{}
 
 	if d.Get("persistent").(bool) != true {
+		if d.Get("safe_destroy").(bool) == true {
+			if err := getRequest(endpoint, &tag); err != nil {
+				return err
+			} else if tag.VmCount > 0 {
+				log.Printf("[NSXLOG] cannot safely destroy %q, %d vms are still attached", d.Id(), tag.VmCount)
+				return nil
+			}
+		}
+
 		if resp, err := resty.R().Delete(endpoint); err != nil {
 			return err
 		} else if resp.StatusCode() == http.StatusNotFound {

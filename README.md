@@ -86,8 +86,9 @@ The following arguments are supported:
 * `tag_name` - (Optional) The name of the NSX security tag. Required if `tag_id` is omitted. Does a case sensitive lookup on the name and sets resource id and `tag_id` to the security tag id
 * `description` - (Optional) The description of the NSX security tag
 * `is_universal` - (Optional) Boolean that creates the NSX security as a universal security tag. NSX 6.3 and higher required. Defaults to false
-* `create_if_missing` - (Optional) Boolean that creates the the NSX security tag if it is not found. Defaults to false
-* `persistent` - (Optional) Boolean that prevents the NSX security tag from being destroyed when true during a destroy operation. This is useful when using this resource for lookup in the `nsx_vm` resource
+* `create_if_missing` - (Optional) Boolean that creates the the NSX security tag if it is not found. Defaults to true
+* `persistent` - (Optional) Boolean that prevents the NSX security tag from being destroyed when true during a destroy operation. This is useful when using this resource for lookup in the `nsx_vm` resource. Defaults to false
+* `safe_destroy` - (Optional) Boolean that prevents the NSX security tag from being destroyed when one or more virtual machines are attached to it. Default to true
 
 ### nsx_vm
 
