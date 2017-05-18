@@ -13,6 +13,10 @@ sandbox/terraform.tfstate
 sandbox/terraform.tfplan
 sandbox/terraform.tfstate.backup
 sandbox/crash.log
+
+# Dockerized godeps
+gosrc_amd64
+
 # Thumbnails
 ._*
 

@@ -116,3 +116,17 @@ The following arguments are supported:
 
 * `vm_id` - (Required) The vSphere managed object reference id or BIOS uuid of the virtual machine
 * `security_tags` (Optional) A list of NSX security tag ids or names. Can be used to attach and detach security tags to the virtual machine
+
+# Build
+The `./build` script uses docker to cache deps in `./gosrc_amd64` and build the code.  
+The resulting artifact will be at `./sandbox/terraform-provider-nsx` where it can be used with the example `main.tf`.
+
+# Runtime
+Dependencies on [resty](https://github.com/go-resty/resty) result in dynamic bindings to net in glibc. (guessing)  
+This will cause Terraform to fail to exec the provider in alpine containers like `hashicorp/terraform`.
+
+Use `stealthybox/infra` for an alpine terraform with glibc:
+```bash
+docker run -v/$PWD://terra -w//terra stealthybox/infra terraform plan
+```
+... or just run terraform on your local machine like a normal person.
