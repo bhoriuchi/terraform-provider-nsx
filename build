@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# directory to cache our dependencies
+mkdir -p gosrc_amd64
+# fetch linux-amd64 godeps
+echo "Fetching Dependencies... (this may take a while the first run)"
+echo 
+docker run --rm \
+  -w//build/provider \
+  -v/$PWD/provider://build/provider \
+  -v/$PWD/gosrc_amd64://go/src \
+  golang:1.8 \
+  go get -v -d ./...
+# build our provider inside a go container
+echo
+echo "Building Provider --> sandbox/terraform-provider-nsx"
+echo 
+docker run --rm \
+  -w//build/provider \
+  -v/$PWD/provider://build/provider \
+  -v/$PWD/sandbox://build/sandbox \
+  -v/$PWD/gosrc_amd64://go/src \
+  golang:1.8 \
+  go build -v -o ../sandbox/terraform-provider-nsx
+# make the resulting binary executable
+chmod +x sandbox/terraform-provider-nsx
