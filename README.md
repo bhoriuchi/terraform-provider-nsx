@@ -2,6 +2,15 @@
 
 The VMware NSX provider is used to interact with the resources supported by VMware NSX. The provider needs to be configured with the proper credentials and manager before it can be used.
 
+* [Provider](#vmware-nsx-provider)
+* [Data Sources](#data-sources)
+  * [nsx_security_tag](#nsx_security_tag)
+  * [nsx_vm](#nsx_vm)
+* [Resources](#resources)
+  * [nsx_security_tag](#nsx_security_tag-1)
+  * [nsx_vm](#nsx_vm-1)
+
+
 ```
 Note: This provider is experimental and not full-featured
 ```
@@ -55,8 +64,8 @@ The following arguments are used to configure the VMware NSX Provider:
 
 # Data Sources
 
-* [nsx_security_tag]()
-* [nsx_vm]()
+* [nsx_security_tag](#nsx_security_tag)
+* [nsx_vm](#nsx_vm)
 
 ### nsx_security_tag
 
@@ -125,8 +134,8 @@ id is set to the ID of the vm. In addition, the following attributes are exporte
 
 # Resources
 
-* [nsx_security_tag](#nsx_security_tag)
-* [nsx_vm](#nsx_vm)
+* [nsx_security_tag](#nsx_security_tag-1)
+* [nsx_vm](#nsx_vm-1)
 
 ### nsx_security_tag
 
