@@ -1,12 +1,12 @@
-package main
+package nsx
 
 import (
-	"regexp"
-	"fmt"
 	"errors"
+	"fmt"
 	"net/http"
+	"regexp"
 
-	"gopkg.in/resty.v0"
+	"github.com/go-resty/resty"
 	"github.com/hashicorp/terraform/helper/schema"
 	"log"
 )
@@ -14,35 +14,35 @@ import (
 func resourceNSXVm() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceNSXVmCreate,
-		Read: resourceNSXVmRead,
+		Read:   resourceNSXVmRead,
 		Update: resourceNSXVmUpdate,
 		Delete: resourceNSXVmDelete,
 
 		Schema: map[string]*schema.Schema{
 			"vm_id": &schema.Schema{
-				Type: schema.TypeString,
-				Required: true,
+				Type:        schema.TypeString,
+				Required:    true,
 				Description: "VM managed object ID or VM instance UUID.",
 			},
 			"security_tags": &schema.Schema{
-				Type: schema.TypeList,
-				Optional: true,
-				Elem: &schema.Schema{Type: schema.TypeString},
+				Type:        schema.TypeList,
+				Optional:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
 				Description: "List of security tag ids or names.",
-				Computed: true,
+				Computed:    true,
 			},
 		},
 	}
 }
 
 func resourceNSXVmCreate(d *schema.ResourceData, meta interface{}) error {
-	config 		:= meta.(*Config)
-	vmId 		:= d.Get("vm_id").(string)
+	config := meta.(*Config)
+	vmId := d.Get("vm_id").(string)
 
 	if v, ok := d.GetOk("security_tags"); ok {
-		tagList 	:= NSXTagList{}
-		tagIds 		:= []string{}
-		endpoint 	:= fmt.Sprintf("%s/tag", config.TagEndpoint)
+		tagList := NSXTagList{}
+		tagIds := []string{}
+		endpoint := fmt.Sprintf("%s/tag", config.TagEndpoint)
 
 		if err := getRequest(endpoint, &tagList); err != nil {
 			return err
@@ -65,10 +65,10 @@ func resourceNSXVmCreate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceNSXVmRead(d *schema.ResourceData, meta interface{}) error {
-	config 		:= meta.(*Config)
-	tagList 	:= NSXTagList{}
-	tagIds 		:= []string{}
-	endpoint 	:= fmt.Sprintf("%s/vm/%s", config.TagEndpoint, d.Id())
+	config := meta.(*Config)
+	tagList := NSXTagList{}
+	tagIds := []string{}
+	endpoint := fmt.Sprintf("%s/vm/%s", config.TagEndpoint, d.Id())
 
 	if err := getRequest(endpoint, &tagList); err != nil {
 		d.SetId("")
@@ -86,11 +86,11 @@ func resourceNSXVmRead(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceNSXVmUpdate(d *schema.ResourceData, meta interface{}) error {
-	config 		:= meta.(*Config)
-	tagList 	:= NSXTagList{}
-	allTags		:= NSXTagList{}
-	endpoint 	:= fmt.Sprintf("%s/vm/%s", config.TagEndpoint, d.Id())
-	tagsEndpoint	:= fmt.Sprintf("%s/tag", config.TagEndpoint)
+	config := meta.(*Config)
+	tagList := NSXTagList{}
+	allTags := NSXTagList{}
+	endpoint := fmt.Sprintf("%s/vm/%s", config.TagEndpoint, d.Id())
+	tagsEndpoint := fmt.Sprintf("%s/tag", config.TagEndpoint)
 
 	if getErr := getRequest(endpoint, &tagList); getErr != nil {
 		d.SetId("")
@@ -102,8 +102,8 @@ func resourceNSXVmUpdate(d *schema.ResourceData, meta interface{}) error {
 			return err
 		}
 
-		tagIds 	:= mapTagIds(tagList.SecurityTags)
-		tfIds 	:= mapTfIds(allTags.SecurityTags, v)
+		tagIds := mapTagIds(tagList.SecurityTags)
+		tfIds := mapTfIds(allTags.SecurityTags, v)
 
 		// remove tags
 		for _, tagId := range tagIds {
@@ -127,10 +127,9 @@ func resourceNSXVmUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceNSXVmDelete(d *schema.ResourceData, meta interface{}) error {
-	config 		:= meta.(*Config)
-	tagList		:= NSXTagList{}
-	endpoint	:= fmt.Sprintf("%s/vm/%s", config.TagEndpoint, d.Id())
-
+	config := meta.(*Config)
+	tagList := NSXTagList{}
+	endpoint := fmt.Sprintf("%s/vm/%s", config.TagEndpoint, d.Id())
 
 	if err := getRequest(endpoint, &tagList); err != nil {
 		return err
@@ -150,8 +149,8 @@ func resourceNSXVmDelete(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func attachTag (config *Config, vmId string, tagId string) error {
-	endpoint 	:= fmt.Sprintf("%s/tag/%s/vm/%s", config.TagEndpoint, tagId, vmId)
+func attachTag(config *Config, vmId string, tagId string) error {
+	endpoint := fmt.Sprintf("%s/tag/%s/vm/%s", config.TagEndpoint, tagId, vmId)
 
 	if resp, err := resty.R().Put(endpoint); err != nil {
 		return err
@@ -161,8 +160,8 @@ func attachTag (config *Config, vmId string, tagId string) error {
 	return nil
 }
 
-func detachTag (config *Config, vmId string, tagId string) error {
-	endpoint 	:= fmt.Sprintf("%s/tag/%s/vm/%s", config.TagEndpoint, tagId, vmId)
+func detachTag(config *Config, vmId string, tagId string) error {
+	endpoint := fmt.Sprintf("%s/tag/%s/vm/%s", config.TagEndpoint, tagId, vmId)
 
 	if resp, err := resty.R().Delete(endpoint); err != nil {
 		return err
@@ -172,7 +171,7 @@ func detachTag (config *Config, vmId string, tagId string) error {
 	return nil
 }
 
-func mapTfIds (tagList []NSXTag, list interface{}) []string {
+func mapTfIds(tagList []NSXTag, list interface{}) []string {
 	mapped := []string{}
 
 	for _, item := range list.([]interface{}) {
@@ -185,7 +184,7 @@ func mapTfIds (tagList []NSXTag, list interface{}) []string {
 	return mapped
 }
 
-func mapTagIds (list []NSXTag) []string {
+func mapTagIds(list []NSXTag) []string {
 	mapped := []string{}
 
 	for _, tag := range list {
@@ -194,7 +193,7 @@ func mapTagIds (list []NSXTag) []string {
 	return mapped
 }
 
-func stringListContains (list []string, value string) bool {
+func stringListContains(list []string, value string) bool {
 	for _, item := range list {
 		if item == value {
 			return true
@@ -203,7 +202,7 @@ func stringListContains (list []string, value string) bool {
 	return false
 }
 
-func lookupTagId (tagList []NSXTag, tag string) (string, error) {
+func lookupTagId(tagList []NSXTag, tag string) (string, error) {
 	if isSecurityTagId(tag) {
 		return tag, nil
 	}
@@ -215,7 +214,7 @@ func lookupTagId (tagList []NSXTag, tag string) (string, error) {
 	}
 }
 
-func lookupTagIdByName (tagList []NSXTag, tagName string) (string, error) {
+func lookupTagIdByName(tagList []NSXTag, tagName string) (string, error) {
 	for _, tag := range tagList {
 		if tag.Name == tagName {
 			return tag.ObjectId, nil
@@ -224,7 +223,7 @@ func lookupTagIdByName (tagList []NSXTag, tagName string) (string, error) {
 	return "", fmt.Errorf("Security tag %q not found", tagName)
 }
 
-func isSecurityTagId (value string) bool {
+func isSecurityTagId(value string) bool {
 	matched, err := regexp.MatchString(`^securitytag-\d+$`, value)
 	return err == nil && matched == true
 }
