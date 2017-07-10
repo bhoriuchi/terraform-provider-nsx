@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"encoding/xml"
 	"errors"
 	"github.com/go-resty/resty"
 	"github.com/hashicorp/terraform/helper/schema"
@@ -45,6 +46,11 @@ func resourceNSXSecurityTag() *schema.Resource {
 				Default:     true,
 				Description: "When true, prevents removal of the security tag if one or more virtual machines are attached to it.",
 			},
+			"revision": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "Revision number of the tag.",
+			},
 		},
 	}
 }
@@ -56,7 +62,7 @@ func resourceNSXSecurityTagCreate(d *schema.ResourceData, meta interface{}) erro
 	newTag := NSXTag{
 		ObjectTypeName: "SecurityTag",
 		Type:           NSXTagType{TypeName: "SecurityTag"},
-		Name:           d.Get("tag_name").(string),
+		Name:           d.Get("name").(string),
 		IsUniversal:    d.Get("is_universal").(bool),
 		Description:    d.Get("description").(string),
 	}
@@ -90,15 +96,20 @@ func resourceNSXSecurityTagUpdate(d *schema.ResourceData, meta interface{}) erro
 	config := meta.(*Config)
 	endpoint := fmt.Sprintf("%s/tag/%s", config.TagEndpoint, d.Id())
 
-	if d.HasChange("tag_name") || d.HasChange("description") {
+	if d.HasChange("name") || d.HasChange("description") {
 		tag := NSXTag{
-			ObjectId:       d.Id(),
-			ObjectTypeName: "SecurityTag",
-			Type:           NSXTagType{TypeName: "SecurityTag"},
-			Name:           d.Get("tag_name").(string),
-			IsUniversal:    d.Get("is_universal").(bool),
-			Description:    d.Get("description").(string),
+			ObjectId:    d.Id(),
+			Type:        NSXTagType{TypeName: "SecurityTag"},
+			Name:        d.Get("name").(string),
+			Description: d.Get("description").(string),
+			Revision:    d.Get("revision").(int),
 		}
+
+		tagxml, err := xml.Marshal(tag)
+		if err != nil {
+			return err
+		}
+		log.Printf("[NSXLOG] Update Payload: %s", tagxml)
 
 		if resp, err := resty.R().SetBody(tag).Put(endpoint); err != nil {
 			return err
@@ -106,8 +117,6 @@ func resourceNSXSecurityTagUpdate(d *schema.ResourceData, meta interface{}) erro
 			return fmt.Errorf("%s", resp.String())
 		}
 	}
-
-	d.Set("tag_id", d.Id())
 
 	return nil
 }

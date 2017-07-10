@@ -91,8 +91,8 @@ func getNSXTagById(config *Config, tagId string) (NSXTag, error) {
 
 func setNSXTag(d *schema.ResourceData, tag *NSXTag) {
 	d.SetId(tag.ObjectId)
-	d.Set("tag_id", tag.ObjectId)
 	d.Set("description", tag.Description)
-	d.Set("tag_name", tag.Name)
+	d.Set("name", tag.Name)
 	d.Set("is_universal", tag.IsUniversal)
+	d.Set("revision", tag.Revision)
 }

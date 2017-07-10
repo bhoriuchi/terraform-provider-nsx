@@ -17,6 +17,7 @@ type NSXTag struct {
 	Description    string     `xml:"description,omitempty"`
 	IsUniversal    bool       `xml:"isUniversal,omitempty"`
 	VmCount        int        `xml:"vmCount,omitempty"`
+	Revision       int        `xml:"revision,omitempty"`
 }
 
 type NSXTagList struct {

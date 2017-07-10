@@ -193,7 +193,8 @@ The following arguments are supported:
 
 # Build
 * For use on the local machine run `make bin` from the root directory of this project
-* For specific os/architecture set the environment variable `GOX_OS_ARCH` using [gox](https://github.com/mitchellh/gox) os/arch combinations like "darwin/amd64" use `make dist`
+* For specific os/architecture set the environment variable `GOX_OS_ARCH` using [gox](https://github.com/mitchellh/gox) os/arch combinations like "darwin/amd64" use `make dist`.
+This also requires that docker is installed on the machine building the distributions
 
 # Runtime
 Dependencies on [resty](https://github.com/go-resty/resty) result in dynamic bindings to net in glibc. (guessing)  

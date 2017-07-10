@@ -9,6 +9,7 @@ import (
 	"github.com/go-resty/resty"
 	"github.com/hashicorp/terraform/helper/schema"
 	"log"
+	"sort"
 )
 
 func resourceNSXVm() *schema.Resource {
@@ -79,6 +80,8 @@ func resourceNSXVmRead(d *schema.ResourceData, meta interface{}) error {
 		tagIds = append(tagIds, tag.ObjectId)
 	}
 
+	sort.Strings(tagIds)
+
 	d.Set("security_tags", tagIds)
 	d.SetId(d.Id())
 
@@ -104,6 +107,8 @@ func resourceNSXVmUpdate(d *schema.ResourceData, meta interface{}) error {
 
 		tagIds := mapTagIds(tagList.SecurityTags)
 		tfIds := mapTfIds(allTags.SecurityTags, v)
+		sort.Strings(tfIds)
+		d.Set("security_tags", tfIds)
 
 		// remove tags
 		for _, tagId := range tagIds {

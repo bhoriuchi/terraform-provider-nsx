@@ -39,6 +39,11 @@ func dataSourceNSXSecurityTag() *schema.Resource {
 				Computed:    true,
 				Description: "Number of VMs attached to the security group",
 			},
+			"revision": {
+				Type:        schema.TypeInt,
+				Computed:    true,
+				Description: "Revision number of the security tag",
+			},
 		},
 	}
 }
@@ -56,6 +61,7 @@ func dataSourceNSXSecurityTagRead(d *schema.ResourceData, meta interface{}) erro
 		d.Set("description", tag.Description)
 		d.Set("type_name", tag.ObjectTypeName)
 		d.Set("vm_count", tag.VmCount)
+		d.Set("revision", tag.Revision)
 	}
 
 	return nil
