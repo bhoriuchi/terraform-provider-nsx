@@ -20,6 +20,11 @@ Note: This provider is experimental and not full-featured
 ---
 
 ```
+variable "vm_count" {
+  type = "string"
+  default = "2"
+}
+
 # Configure the VMware NSX Provider
 provider "nsx" {
   user = "${var.user}"
@@ -27,6 +32,14 @@ provider "nsx" {
   nsx_manager = "${var.nsx_manager}"
   allow_unverified_ssl = "${var.allow_unverified_ssl}"
 }
+
+# Configure vSphere Provider
+provider "vsphere" {
+  user = "${var.user}"
+  password = "${var.password}"
+  vsphere_server = "${var.vsphere_server}"
+}
+
 
 # Create or lookup a Security Tag
 resource "nsx_security_tag" "tag1" {
@@ -40,9 +53,30 @@ resource "nsx_security_tag" "tag2" {
   description = "Opens port 443"
 }
 
+# Provision some VMs
+resource "vsphere_virtual_machine" "vms" {
+  count = "${var.vm_count}"
+  vcpu = 2
+  memory = 4096
+  name = "vm${count.index}"
+  folder = "Terraform"
+  datacenter = "Datacenter1"
+  cluster = "Cluster1"
+
+  network_interface {
+    label = "test"
+  }
+
+  disk {
+    template = "UBUNTU"
+    datastore = "datastore1"
+  }
+}
+
 # Assign Security Tags to a Virtual Machine
-resource "nsx_vm" "web01" {
-  vm_id = "${var.vm_id}"
+resource "nsx_vm" "web" {
+  count = "${var.vm_count}"
+  vm_id = "${element(vsphere_virtual_machine.vms.*.moid, count.index)}"
   security_tags = [
     "${nsx_security_tag.tag1.id}",
     "${nsx_security_tag.tag2.id}"
