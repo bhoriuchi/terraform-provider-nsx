@@ -1,30 +1,25 @@
-package main
+package nsx
 
 import (
-	"time"
 	"crypto/tls"
+	"time"
 
-	"gopkg.in/resty.v0"
+	"github.com/coreos/go-semver/semver"
+	"github.com/go-resty/resty"
 )
 
-type Semver struct {
-	Major int
-	Minor int
-	Patch int
-}
-
 type Config struct {
-	User string
-	Password string
-	NSXManager string
-	TagEndpoint string
+	User         string
+	Password     string
+	NSXManager   string
+	TagEndpoint  string
 	InsecureFlag bool
-	NSXVersion Semver
+	NSXVersion   semver.Version
 }
 
 func (c *Config) ClientInit() (*Config, error) {
 	if c.InsecureFlag == true {
-		resty.SetTLSClientConfig(&tls.Config{ InsecureSkipVerify: true })
+		resty.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	}
 	resty.SetBasicAuth(c.User, c.Password)
 	resty.SetHeader("Accept", "application/xml")

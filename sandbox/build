@@ -1,3 +1,0 @@
-cd ../provider
-go build -o ../sandbox/terraform-provider-nsx
-chmod +x ../sandbox/terraform-provider-nsx

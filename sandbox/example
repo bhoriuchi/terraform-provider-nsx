@@ -1,3 +1,0 @@
-# rm -f terraform.tfplan
-# rm -f terraform.tfstate
-./terraform apply -var-file "terraform.tfvars"
